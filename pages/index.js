@@ -207,6 +207,7 @@ export default function Home() {
     const showApology = () => {
         interactionCount++;
         const apology = gameData.convincingMessages[Math.floor(Math.random() * gameData.convincingMessages.length)];
+        showMessage("I am really sorry baby boo!! Yk na i love you so much chal jaldi idhar aaaa i love youu.. 💕");
         setSurprise({ content: apology, visible: true });
         setLudoAnimation('sad-mode');
         createFloatingHearts(['🥺', '💔', '🙏'], 4);
@@ -220,6 +221,7 @@ export default function Home() {
     const makeSweetPromise = () => {
         interactionCount++;
         const promise = gameData.sweetPromises[Math.floor(Math.random() * gameData.sweetPromises.length)];
+        showMessage("Baala tu maza sagla ahes!! i love you so much i promise you i am not gonna leave you at any cost cuz you r the only thing i admire and dreamt of.💕");
         setSurprise({ content: promise, visible: true });
         createFloatingHearts(['🤝', '💖', '⭐'], 5);
         increaseMood(15);
