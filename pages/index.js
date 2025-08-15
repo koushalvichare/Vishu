@@ -1,10 +1,6 @@
-
 import Head from 'next/head';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
-export default function Home() {
-  useEffect(() => {
-    // Enhanced romantic interactive game data
 const gameData = {
     personalInfo: {
         boyfriendName: "Koushal",
@@ -114,528 +110,268 @@ const gameData = {
     ]
 };
 
-// Game state
-let currentMoodLevel = 70;
-let currentPoemIndex = 0;
-let currentLetterIndex = 0;
-let currentMemoryIndex = 0;
-let ludoClickCount = 0;
-let interactionCount = 0;
+export default function Home() {
+    const [moodLevel, setMoodLevel] = useState(70);
+    const [currentMessage, setCurrentMessage] = useState("Hey Vishu! Your Koushal loves you! Click LUDO for magic! 🐶✨");
+    const [ludoAnimation, setLudoAnimation] = useState('');
+    const [dogStatus, setDogStatus] = useState("Click me for surprises!");
+    const [floatingHearts, setFloatingHearts] = useState([]);
+    const [surprise, setSurprise] = useState({ content: '', visible: false });
 
-// DOM elements
-const ludoContainer = document.getElementById('ludoContainer');
-const ludoImage = document.getElementById('ludoImage');
-const dogName = document.getElementById('dogName');
-const dogStatus = document.getElementById('dogStatus');
-const messageElement = document.getElementById('currentMessage');
-const moodFill = document.getElementById('moodFill');
-const moodIndicator = document.getElementById('moodIndicator');
-const floatingElements = document.getElementById('floatingElements');
-const surpriseSection = document.getElementById('surpriseSection');
-const surpriseContent = document.getElementById('surpriseContent');
+    const [poemModal, setPoemModal] = useState(false);
+    const [currentPoemIndex, setCurrentPoemIndex] = useState(0);
 
-// Button elements
-const emergencyBtn = document.getElementById('emergencyBtn');
-const poemBtn = document.getElementById('poemBtn');
-const complimentBtn = document.getElementById('complimentBtn');
-const apologyBtn = document.getElementById('apologyBtn');
-const loveLetter = document.getElementById('loveLetter');
-const galleryBtn = document.getElementById('galleryBtn');
-const promiseBtn = document.getElementById('promiseBtn');
-const hugBtn = document.getElementById('hugBtn');
-const closeBtn = document.getElementById('closeBtn');
+    const [loveLetterModal, setLoveLetterModal] = useState(false);
+    const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
 
-// Modal elements
-const poemModal = document.getElementById('poemModal');
-const loveLatterModal = document.getElementById('loveLatterModal');
-const galleryModal = document.getElementById('galleryModal');
+    const [galleryModal, setGalleryModal] = useState(false);
+    const [currentMemoryIndex, setCurrentMemoryIndex] = useState(0);
 
-// Initialize the enhanced game
-function initGame() {
-    addAllEventListeners();
-    startPeriodicAnimations();
-    updateMoodMeter();
-    
-    // Welcome animation sequence
-    setTimeout(() => {
-        createFloatingHearts(['💖', '✨', '🌟'], 5);
-        showMessage("Welcome my beautiful Vishu! Click anywhere for surprises! 💕");
-    }, 1000);
-    
-    // Auto-compliment after 3 seconds
-    setTimeout(() => {
-        if (interactionCount === 0) {
-            showRandomCompliment();
+    const ludoImageRef = useRef(null);
+    let interactionCount = 0;
+    let ludoClickCount = 0;
+
+    const createFloatingHearts = (heartTypes, count) => {
+        const newHearts = [];
+        for (let i = 0; i < count; i++) {
+            newHearts.push({
+                id: Math.random(),
+                type: heartTypes[Math.floor(Math.random() * heartTypes.length)],
+                style: {
+                    left: Math.random() * 100 + '%',
+                    animationDelay: Math.random() * 0.5 + 's',
+                    animationDuration: (Math.random() * 2 + 2) + 's',
+                }
+            });
         }
-    }, 3000);
-}
+        setFloatingHearts(prev => [...prev, ...newHearts]);
+        setTimeout(() => {
+            setFloatingHearts(prev => prev.slice(count));
+        }, 4000);
+    };
 
-function addAllEventListeners() {
-    // LUDO interactions
-    ludoContainer.addEventListener('click', handleLudoClick);
-    ludoImage.addEventListener('mouseenter', handleLudoHover);
-    
-    // Button interactions
-    emergencyBtn.addEventListener('click', activateEmergencyMode);
-    poemBtn.addEventListener('click', showPoemModal);
-    complimentBtn.addEventListener('click', showRandomCompliment);
-    apologyBtn.addEventListener('click', showApology);
-    loveLetter.addEventListener('click', showLoveLetterModal);
-    galleryBtn.addEventListener('click', showGalleryModal);
-    promiseBtn.addEventListener('click', makeSweetPromise);
-    hugBtn.addEventListener('click', giveVirtualHug);
-    closeBtn.addEventListener('click', closeSurprise);
-    
-    // Modal interactions
-    setupModalListeners();
-    
-    // Easter egg - secret key combination
-    document.addEventListener('keydown', handleSecretKeys);
-}
+    const increaseMood = (amount) => {
+        setMoodLevel(prev => Math.min(100, prev + amount));
+    };
 
-function handleLudoClick() {
-    ludoClickCount++;
-    interactionCount++;
-    
-    // Different reactions based on click count
-    const reactions = gameData.ludoReactions;
-    const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
-    
-    showMessage(randomReaction);
-    
-    // Special animations based on click count
-    if (ludoClickCount % 3 === 0) {
-        ludoImage.className = 'dog-image excited-mode';
-        createFloatingHearts(['🐾', '🐶', '💖'], 8);
-        increaseMood(10);
-    } else if (ludoClickCount % 2 === 0) {
-        ludoImage.className = 'dog-image happy-mode';
-        createFloatingHearts(['❤️', '✨'], 5);
-        increaseMood(5);
-    }
-    
-    // Reset animation class
-    setTimeout(() => {
-        ludoImage.className = 'dog-image';
-    }, 1000);
-    
-    // Special milestone reactions
-    if (ludoClickCount === 5) {
-        showSurprise("🎉 LUDO is super excited! He says you're the best human ever! Want to hear a secret? Koushal practices saying 'I love you' to LUDO every morning! 🐶💕");
-    } else if (ludoClickCount === 10) {
-        showSurprise("🌟 WOW! LUDO declares you the official 'Best Human Award' winner! He wants to give you all his toys and treats! 🏆🦴");
-    }
-    
-    // Change dog status
-    const statuses = [
-        "So happy you clicked me! 🐾",
-        "Woof woof! More clicks please! 🐶",
-        "You're the best, Vishu! 💖",
-        "LUDO loves belly rubs! 🤗",
-        "Tail wagging intensifies! 🌟"
-    ];
-    dogStatus.textContent = statuses[Math.floor(Math.random() * statuses.length)];
-}
+    const showMessage = (message) => {
+        setCurrentMessage(message);
+    };
 
-function handleLudoHover() {
-    createFloatingHearts(['🐾'], 1);
-    dogStatus.textContent = "I sense pets incoming! 🐶";
-}
+    const handleLudoClick = () => {
+        ludoClickCount++;
+        interactionCount++;
 
-function activateEmergencyMode() {
-    interactionCount++;
-    emergencyBtn.textContent = "🚨 DEPLOYING CUTENESS...";
-    emergencyBtn.disabled = true;
-    
-    // Multi-stage emergency sequence
-    setTimeout(() => {
+        const reactions = gameData.ludoReactions;
+        const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
+        showMessage(randomReaction);
+
+        if (ludoClickCount % 3 === 0) {
+            setLudoAnimation('excited-mode');
+            createFloatingHearts(['🐾', '🐶', '💖'], 8);
+            increaseMood(10);
+        } else if (ludoClickCount % 2 === 0) {
+            setLudoAnimation('happy-mode');
+            createFloatingHearts(['❤️', '✨'], 5);
+            increaseMood(5);
+        }
+
+        setTimeout(() => {
+            setLudoAnimation('');
+        }, 1000);
+
+        if (ludoClickCount === 5) {
+            setSurprise({ content: "🎉 LUDO is super excited! He says you're the best human ever! Want to hear a secret? Koushal practices saying 'I love you' to LUDO every morning! 🐶💕", visible: true });
+        } else if (ludoClickCount === 10) {
+            setSurprise({ content: "🌟 WOW! LUDO declares you the official 'Best Human Award' winner! He wants to give you all his toys and treats! 🏆🦴", visible: true });
+        }
+
+        const statuses = [
+            "So happy you clicked me! 🐾",
+            "Woof woof! More clicks please! 🐶",
+            "You're the best, Vishu! 💖",
+            "LUDO loves belly rubs! 🤗",
+            "Tail wagging intensifies! 🌟"
+        ];
+        setDogStatus(statuses[Math.floor(Math.random() * statuses.length)]);
+    };
+
+    const showRandomCompliment = () => {
+        interactionCount++;
+        const compliment = gameData.compliments[Math.floor(Math.random() * gameData.compliments.length)];
+        showMessage(compliment);
+        createFloatingHearts(['🌟', '✨', '💖'], 6);
+        increaseMood(8);
+    };
+
+    const showApology = () => {
+        interactionCount++;
+        const apology = gameData.convincingMessages[Math.floor(Math.random() * gameData.convincingMessages.length)];
+        setSurprise({ content: apology, visible: true });
+        setLudoAnimation('sad-mode');
+        createFloatingHearts(['🥺', '💔', '🙏'], 4);
+        increaseMood(12);
+
+        setTimeout(() => {
+            setLudoAnimation('');
+        }, 1500);
+    };
+
+    const makeSweetPromise = () => {
+        interactionCount++;
+        const promise = gameData.sweetPromises[Math.floor(Math.random() * gameData.sweetPromises.length)];
+        setSurprise({ content: promise, visible: true });
+        createFloatingHearts(['🤝', '💖', '⭐'], 5);
+        increaseMood(15);
+    };
+
+    const giveVirtualHug = () => {
+        interactionCount++;
+        showMessage("🤗 Sending you the biggest, warmest hug, Bachaa ummaaa! Feel my arms around you! 💕");
+        if (ludoImageRef.current) {
+            ludoImageRef.current.style.transform = 'scale(1.2)';
+        }
+        createFloatingHearts(['🤗', '💝', '🥰', '❤️'], 10);
+        increaseMood(25);
+
+        setTimeout(() => {
+            if (ludoImageRef.current) {
+                ludoImageRef.current.style.transform = '';
+            }
+            showMessage("Hug delivered successfully! I love you so so much, beautiful Bayko! 💖");
+        }, 2000);
+    };
+
+    const activateEmergencyMode = () => {
+        interactionCount++;
         const emergencyMsg = gameData.emergencyMessages[Math.floor(Math.random() * gameData.emergencyMessages.length)];
-        showSurprise(emergencyMsg);
+        setSurprise({ content: emergencyMsg, visible: true });
         createFloatingHearts(['🚨', '💖', '🥺', '✨', '🌟', '❤️'], 15);
         increaseMood(20);
-    }, 1000);
-    
-    setTimeout(() => {
-        showMessage("EMERGENCY SUCCESS! Bachaa, how can you resist this level of cuteness? 😍");
-        ludoImage.className = 'dog-image excited-mode';
-    }, 3000);
-    
-    setTimeout(() => {
-        emergencyBtn.textContent = "🚨 Emergency Cute Mode";
-        emergencyBtn.disabled = false;
-        ludoImage.className = 'dog-image';
-    }, 5000);
-}
-
-function showPoemModal() {
-    interactionCount++;
-    displayPoem(currentPoemIndex);
-    poemModal.classList.remove('hidden');
-    increaseMood(15);
-}
-
-function displayPoem(index) {
-    const poem = gameData.poems[index];
-    document.getElementById('poemTitle').textContent = poem.title;
-    
-    const poemLines = document.getElementById('poemLines');
-    poemLines.innerHTML = '';
-    
-    poem.lines.forEach(line => {
-        const p = document.createElement('p');
-        p.textContent = line;
-        poemLines.appendChild(p);
-    });
-    
-    createFloatingHearts(['📝', '💕', '🌹'], 5);
-}
-
-function showRandomCompliment() {
-    interactionCount++;
-    const compliment = gameData.compliments[Math.floor(Math.random() * gameData.compliments.length)];
-    showMessage(compliment);
-    createFloatingHearts(['🌟', '✨', '💖'], 6);
-    increaseMood(8);
-}
-
-function showApology() {
-    interactionCount++;
-    const apology = gameData.convincingMessages[Math.floor(Math.random() * gameData.convincingMessages.length)];
-    showSurprise(apology);
-    ludoImage.className = 'dog-image sad-mode';
-    createFloatingHearts(['🥺', '💔', '🙏'], 4);
-    increaseMood(12);
-    
-    setTimeout(() => {
-        ludoImage.className = 'dog-image';
-    }, 1500);
-}
-
-function showLoveLetterModal() {
-    interactionCount++;
-    displayLoveLetter(currentLetterIndex);
-    loveLatterModal.classList.remove('hidden');
-    increaseMood(18);
-}
-
-function displayLoveLetter(index) {
-    const letter = gameData.loveLetters[index];
-    document.getElementById('letterContent').innerHTML = letter;
-    createFloatingHearts(['💌', '💕', '📝'], 7);
-}
-
-function showGalleryModal() {
-    interactionCount++;
-    displayMemory(currentMemoryIndex);
-    galleryModal.classList.remove('hidden');
-    increaseMood(10);
-}
-
-function displayMemory(index) {
-    const memory = gameData.memoryGallery[index];
-    document.getElementById('galleryItem').querySelector('.memory-photo').textContent = memory.photo;
-    document.getElementById('memoryCaption').textContent = memory.caption;
-    createFloatingHearts(['📸', '💝', '🥰'], 4);
-}
-
-function makeSweetPromise() {
-    interactionCount++;
-    const promise = gameData.sweetPromises[Math.floor(Math.random() * gameData.sweetPromises.length)];
-    showSurprise(promise);
-    createFloatingHearts(['🤝', '💖', '⭐'], 5);
-    increaseMood(15);
-}
-
-function giveVirtualHug() {
-    interactionCount++;
-    showMessage("🤗 Sending you the biggest, warmest hug, Bachaa! Feel my arms around you! 💕");
-    
-    // Special hug animation
-    ludoImage.style.transform = 'scale(1.2)';
-    createFloatingHearts(['🤗', '💝', '🥰', '❤️'], 10);
-    increaseMood(25);
-    
-    setTimeout(() => {
-        ludoImage.style.transform = '';
-        showMessage("Hug delivered successfully! I love you, beautiful Bayko! 💖");
-    }, 2000);
-}
-
-function setupModalListeners() {
-    // Poem modal
-    document.getElementById('nextPoem').addEventListener('click', () => {
-        currentPoemIndex = (currentPoemIndex + 1) % gameData.poems.length;
-        displayPoem(currentPoemIndex);
-    });
-    
-    document.getElementById('closePoemModal').addEventListener('click', () => {
-        poemModal.classList.add('hidden');
-    });
-    
-    // Love letter modal
-    document.getElementById('newLetter').addEventListener('click', () => {
-        currentLetterIndex = (currentLetterIndex + 1) % gameData.loveLetters.length;
-        displayLoveLetter(currentLetterIndex);
-    });
-    
-    document.getElementById('closeLetterModal').addEventListener('click', () => {
-        loveLatterModal.classList.add('hidden');
-    });
-    
-    // Gallery modal
-    document.getElementById('nextMemory').addEventListener('click', () => {
-        currentMemoryIndex = (currentMemoryIndex + 1) % gameData.memoryGallery.length;
-        displayMemory(currentMemoryIndex);
-    });
-    
-    document.getElementById('closeGalleryModal').addEventListener('click', () => {
-        galleryModal.classList.add('hidden');
-    });
-}
-
-function showMessage(message) {
-    messageElement.style.opacity = '0';
-    messageElement.style.transform = 'scale(0.9)';
-    
-    setTimeout(() => {
-        messageElement.textContent = message;
-        messageElement.style.opacity = '1';
-        messageElement.style.transform = 'scale(1)';
-    }, 200);
-}
-
-function showSurprise(content) {
-    surpriseContent.innerHTML = content;
-    surpriseSection.classList.remove('hidden');
-}
-
-function closeSurprise() {
-    surpriseSection.classList.add('hidden');
-}
-
-function createFloatingHearts(heartTypes, count) {
-    for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-            const heart = document.createElement('div');
-            heart.className = 'floating-heart';
-            heart.textContent = heartTypes[Math.floor(Math.random() * heartTypes.length)];
-            
-            // Random position
-            heart.style.left = Math.random() * 100 + '%';
-            heart.style.bottom = '0px';
-            
-            // Random animation properties
-            heart.style.animationDelay = Math.random() * 0.5 + 's';
-            heart.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            
-            floatingElements.appendChild(heart);
-            
-            // Remove after animation
-            setTimeout(() => {
-                if (heart.parentNode) {
-                    heart.parentNode.removeChild(heart);
-                }
-            }, 4000);
-        }, i * 150);
-    }
-}
-
-function increaseMood(amount) {
-    currentMoodLevel = Math.min(100, currentMoodLevel + amount);
-    updateMoodMeter();
-}
-
-function decreaseMood(amount) {
-    currentMoodLevel = Math.max(0, currentMoodLevel - amount);
-    updateMoodMeter();
-}
-
-function updateMoodMeter() {
-    moodFill.style.width = currentMoodLevel + '%';
-    
-    // Update mood indicator emoji
-    if (currentMoodLevel >= 80) {
-        moodIndicator.textContent = '😍';
-    } else if (currentMoodLevel >= 60) {
-        moodIndicator.textContent = '😊';
-    } else if (currentMoodLevel >= 40) {
-        moodIndicator.textContent = '😐';
-    } else if (currentMoodLevel >= 20) {
-        moodIndicator.textContent = '😕';
-    } else {
-        moodIndicator.textContent = '😢';
-    }
-    
-    // Special mood achievements
-    if (currentMoodLevel === 100) {
-        showSurprise("🎉 MAXIMUM HAPPINESS ACHIEVED! Vishu, you're absolutely glowing with joy! Koushal's mission accomplished! 💖✨");
-        createFloatingHearts(['🎉', '🌟', '👑', '💖', '✨'], 20);
-    }
-}
-
-function startPeriodicAnimations() {
-    // Periodic floating hearts
-    setInterval(() => {
-        if (Math.random() < 0.4) {
-            createFloatingHearts(['💕'], 1);
-        }
-    }, 3000);
-    
-    // Random sweet messages
-    setInterval(() => {
-        if (Math.random() < 0.2 && interactionCount > 5) {
-            const phrases = gameData.romanticPhrases;
-            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-            showMessage(randomPhrase);
-        }
-    }, 15000);
-    
-    // Mood decay (very slow)
-    setInterval(() => {
-        if (currentMoodLevel > 50 && Math.random() < 0.1) {
-            decreaseMood(1);
-        }
-    }, 30000);
-}
-
-// Secret key combination easter egg
-let secretSequence = [];
-const targetSequence = ['v', 'i', 's', 'h', 'u'];
-
-function handleSecretKeys(event) {
-    secretSequence.push(event.key.toLowerCase());
-    
-    if (secretSequence.length > targetSequence.length) {
-        secretSequence = secretSequence.slice(-targetSequence.length);
-    }
-    
-    if (JSON.stringify(secretSequence) === JSON.stringify(targetSequence)) {
-        triggerSecretMessage();
-        secretSequence = [];
-    }
-}
-
-function triggerSecretMessage() {
-    showSurprise("🎊 SECRET UNLOCKED! You typed 'VISHU'! 🎊<br><br>Special message from Koushal: 'Every letter of your name is precious to me. V-I-S-H-U, each letter represents how much I adore you. You are my everything, my beautiful angel!' 👼💖");
-    createFloatingHearts(['V', 'I', 'S', 'H', 'U', '💖', '👑'], 15);
-    increaseMood(30);
-}
-
-// Auto-save interaction progress
-function saveProgress() {
-    const progress = {
-        mood: currentMoodLevel,
-        interactions: interactionCount,
-        ludoClicks: ludoClickCount
     };
-    // Note: Not using localStorage as per instructions, just keeping for reference
-}
 
-// Initialize everything when DOM is ready
-initGame();
+    useEffect(() => {
+        if (moodLevel === 100) {
+            setSurprise({ content: "🎉 MAXIMUM HAPPINESS ACHIEVED! mera pyara bachaa, you're absolutely glowing with those pink pink chicks! Koushal's mission accomplished! 💖✨", visible: true });
+            createFloatingHearts(['🎉', '🌟', '👑', '💖', '✨'], 20);
+        }
+    }, [moodLevel]);
 
-  }, []);
+    return (
+        <>
+            <Head>
+                <title>Ayy maza god baal ahe na tu?</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            </Head>
+            <div className="container">
+                <div className="game-card">
+                    <h1 className="title">Ayy maza god baal ahe na tu? 💖</h1>
 
-  return (
-    <>
-      <Head>
-        <title>Ayy maza god baal ahe na tu?</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </Head>
-      <div className="container">
-        <div className="game-card">
-            <h1 className="title">Ayy maza god baal ahe na tu? 💖</h1>
-            
-            <div className="ludo-container" id="ludoContainer">
-                <div className="dog-image" id="ludoImage">
-                    <div className="dog-face">
-                        <div className="dog-ears">
-                            <div className="ear left"></div>
-                            <div className="ear right"></div>
-                        </div>
-                        <div className="dog-head">
-                            <div className="dog-eyes">
-                                <div className="eye left" id="leftEye"></div>
-                                <div className="eye right" id="rightEye"></div>
+                    <div className="ludo-container" onClick={handleLudoClick}>
+                        <div className={`dog-image ${ludoAnimation}`} ref={ludoImageRef}>
+                            <div className="dog-face">
+                                <div className="dog-ears">
+                                    <div className="ear left"></div>
+                                    <div className="ear right"></div>
+                                </div>
+                                <div className="dog-head">
+                                    <div className="dog-eyes">
+                                        <div className="eye left"></div>
+                                        <div className="eye right"></div>
+                                    </div>
+                                    <div className="dog-nose"></div>
+                                    <div className="dog-mouth"></div>
+                                </div>
+                                <div className="dog-body"></div>
+                                <div className="dog-tail"></div>
                             </div>
-                            <div className="dog-nose"></div>
-                            <div className="dog-mouth" id="dogMouth"></div>
                         </div>
-                        <div className="dog-body"></div>
-                        <div className="dog-tail" id="dogTail"></div>
+                        <p className="dog-name">LUDO 🐶</p>
+                        <p className="dog-status">{dogStatus}</p>
+                    </div>
+
+                    <div className="message-container">
+                        <p className="message">{currentMessage}</p>
+                    </div>
+
+                    <div className="interactive-grid">
+                        <button className="btn btn-emergency" onClick={activateEmergencyMode}>🚨 Emergency Cute Mode</button>
+                        <button className="btn btn-poem" onClick={() => setPoemModal(true)}>💌 Love Poems</button>
+                        <button className="btn btn-compliment" onClick={showRandomCompliment}>🌟 Compliment Me</button>
+                        <button className="btn btn-apology" onClick={showApology}>🥺 Apology Booth</button>
+                        <button className="btn btn-love-letter" onClick={() => setLoveLetterModal(true)}>💕 Love Letter</button>
+                        <button className="btn btn-gallery" onClick={() => setGalleryModal(true)}>📸 Memory Lane</button>
+                        <button className="btn btn-promise" onClick={makeSweetPromise}>🤝 Sweet Promises</button>
+                        <button className="btn btn-hug" onClick={giveVirtualHug}>🤗 Virtual Hug</button>
+                    </div>
+
+                    <div className="mood-meter">
+                        <div className="mood-label">Vishu's Mood Meter:</div>
+                        <div className="mood-bar">
+                            <div className="mood-fill" style={{ width: `${moodLevel}%` }}></div>
+                            <div className="mood-indicator">
+                                {moodLevel >= 80 ? '😍' : moodLevel >= 60 ? '😊' : moodLevel >= 40 ? '😐' : moodLevel >= 20 ? '😕' : '😢'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {surprise.visible && (
+                        <div className="surprise-section">
+                            <div className="surprise-content">{surprise.content}</div>
+                            <button className="btn btn-close" onClick={() => setSurprise({ ...surprise, visible: false })}>Close</button>
+                        </div>
+                    )}
+
+                    <div className="floating-elements">
+                        {floatingHearts.map(heart => (
+                            <div key={heart.id} className="floating-heart" style={heart.style}>{heart.type}</div>
+                        ))}
+                    </div>
+
+                    <footer className="footer">
+                        <p>Made with infinite love by Koushal ❤️ for his beautiful Vishu</p>
+                        <p className="sub-text">Darling just hold my hand you look so beautiful 💖</p>
+                    </footer>
+                </div>
+            </div>
+
+            {poemModal && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h3>{gameData.poems[currentPoemIndex].title}</h3>
+                        <div className="poem-lines">
+                            {gameData.poems[currentPoemIndex].lines.map((line, i) => <p key={i}>{line}</p>)}
+                        </div>
+                        <button className="btn btn-next" onClick={() => setCurrentPoemIndex((currentPoemIndex + 1) % gameData.poems.length)}>Next Poem</button>
+                        <button className="btn btn-close-modal" onClick={() => setPoemModal(false)}>Close</button>
                     </div>
                 </div>
-                <p className="dog-name" id="dogName">LUDO 🐶</p>
-                <p className="dog-status" id="dogStatus">Click me for surprises!</p>
-            </div>
+            )}
 
-            <div className="message-container">
-                <p className="message" id="currentMessage">Hey Vishu! Your Koushal loves you! Click LUDO for magic! 🐶✨</p>
-            </div>
-
-            <div className="interactive-grid">
-                <button className="btn btn-emergency" id="emergencyBtn">🚨 Emergency Cute Mode</button>
-                <button className="btn btn-poem" id="poemBtn">💌 Love Poems</button>
-                <button className="btn btn-compliment" id="complimentBtn">🌟 Compliment Me</button>
-                <button className="btn btn-apology" id="apologyBtn">🥺 Apology Booth</button>
-                <button className="btn btn-love-letter" id="loveLetter">💕 Love Letter</button>
-                <button className="btn btn-gallery" id="galleryBtn">📸 Memory Lane</button>
-                <button className="btn btn-promise" id="promiseBtn">🤝 Sweet Promises</button>
-                <button className="btn btn-hug" id="hugBtn">🤗 Virtual Hug</button>
-            </div>
-
-            <div className="mood-meter">
-                <div className="mood-label">Vishu's Mood Meter:</div>
-                <div className="mood-bar">
-                    <div className="mood-fill" id="moodFill"></div>
-                    <div className="mood-indicator" id="moodIndicator">😊</div>
+            {loveLetterModal && (
+                <div className="modal">
+                    <div className="modal-content love-letter-content">
+                        <h3>💌 Generating Love Letter...</h3>
+                        <div className="letter-content">{gameData.loveLetters[currentLetterIndex]}</div>
+                        <button className="btn btn-new-letter" onClick={() => setCurrentLetterIndex((currentLetterIndex + 1) % gameData.loveLetters.length)}>New Letter</button>
+                        <button className="btn btn-close-modal" onClick={() => setLoveLetterModal(false)}>Close</button>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            <div className="surprise-section hidden" id="surpriseSection">
-                <div className="surprise-content" id="surpriseContent"></div>
-                <button className="btn btn-close" id="closeBtn">Close</button>
-            </div>
-
-            <div className="floating-elements" id="floatingElements"></div>
-
-            <footer className="footer">
-                <p>Made with infinite love by Koushal ❤️ for his beautiful Vishu</p>
-                <p className="sub-text">Darling just hold my hand you look so beautiful 💖</p>
-            </footer>
-        </div>
-    </div>
-
-    {/* Hidden modals */}
-    <div className="modal hidden" id="poemModal">
-        <div className="modal-content">
-            <h3 id="poemTitle">For My Beautiful Bayko</h3>
-            <div className="poem-lines" id="poemLines"></div>
-            <button className="btn btn-next" id="nextPoem">Next Poem</button>
-            <button className="btn btn-close-modal" id="closePoemModal">Close</button>
-        </div>
-    </div>
-
-    <div className="modal hidden" id="loveLatterModal">
-        <div className="modal-content love-letter-content">
-            <h3>💌 Generating Love Letter...</h3>
-            <div className="letter-content" id="letterContent"></div>
-            <button className="btn btn-new-letter" id="newLetter">New Letter</button>
-            <button className="btn btn-close-modal" id="closeLetterModal">Close</button>
-        </div>
-    </div>
-
-    <div className="modal hidden" id="galleryModal">
-        <div className="modal-content gallery-content">
-            <h3>📸 Our Beautiful Memories</h3>
-            <div className="gallery-item" id="galleryItem">
-                <div className="memory-photo">📷</div>
-                <p className="memory-caption" id="memoryCaption"></p>
-            </div>
-            <button className="btn btn-next-memory" id="nextMemory">Next Memory</button>
-            <button className="btn btn-close-modal" id="closeGalleryModal">Close</button>
-        </div>
-    </div>
-    </>
-  );
+            {galleryModal && (
+                <div className="modal">
+                    <div className="modal-content gallery-content">
+                        <h3>📸 Our Beautiful Memories</h3>
+                        <div className="gallery-item">
+                            <div className="memory-photo">{gameData.memoryGallery[currentMemoryIndex].photo}</div>
+                            <p className="memory-caption">{gameData.memoryGallery[currentMemoryIndex].caption}</p>
+                        </div>
+                        <button className="btn btn-next-memory" onClick={() => setCurrentMemoryIndex((currentMemoryIndex + 1) % gameData.memoryGallery.length)}>Next Memory</button>
+                        <button className="btn btn-close-modal" onClick={() => setGalleryModal(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
 }
